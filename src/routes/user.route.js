@@ -8,13 +8,20 @@ const router = express.Router();
 // Store public key (called when user logs in first time)
 router.post("/storeKey", protectRoute, async (req, res) => {
   try {
-    const { publicKey } = req.body;
+    const { publicKey, clerkId } = req.body;
+
+    if (!clerkId || !publicKey) {
+      return res.status(400).json({ message: "clerkId and publicKey required" });
+    }
+
     const user = await User.findOneAndUpdate(
-      { clerkId: req.auth().userId },
+      { clerkId },
       { publicKey },
       { new: true }
     );
+
     if (!user) return res.status(404).json({ message: "User not found" });
+
     res.json({ message: "Public key stored successfully" });
   } catch (err) {
     console.error(err);
@@ -27,6 +34,7 @@ router.get("/:clerkId/publicKey", protectRoute, async (req, res) => {
   try {
     const { clerkId } = req.params;
     const user = await User.findOne({ clerkId });
+
     if (!user || !user.publicKey)
       return res.status(404).json({ message: "Public key not found" });
 
