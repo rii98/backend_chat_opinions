@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema(
     },
     publicKey: {
       type: String, // PEM encoded public key
-      required: true,
     },
   },
   { timestamps: true }
