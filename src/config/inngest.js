@@ -10,28 +10,35 @@ const syncUser = inngest.createFunction(
   { id: "sync-user" },
   { event: "clerk/user.created" },
   async ({ event }) => {
-    await connectDB();
+    try {
+      await connectDB();
+      console.log("Connected to MongoDB");
 
-    const { id, email_addresses, first_name, last_name, image_url } = event.data;
+      const { id, email_addresses, first_name, last_name, image_url } = event.data;
 
-    const newUser = {
-      clerkId: id,
-      email: email_addresses[0]?.email_address,
-      name: `${first_name || ""} ${last_name || ""}`,
-      image: image_url,
-    };
+      const newUser = {
+        clerkId: id,
+        email: email_addresses[0]?.email_address,
+        name: `${first_name || ""} ${last_name || ""}`,
+        image: image_url,
+      };
 
-    await User.create(newUser);
+      const userDoc = await User.create(newUser);
+      console.log("User created in MongoDB:", userDoc);
 
-    await upsertStreamUser({
-      id: newUser.clerkId.toString(),
-      name: newUser.name,
-      image: newUser.image,
-    });
+      await upsertStreamUser({
+        id: newUser.clerkId.toString(),
+        name: newUser.name,
+        image: newUser.image,
+      });
 
-    await addUserToPublicChannels(newUser.clerkId.toString());
+      await addUserToPublicChannels(newUser.clerkId.toString());
+    } catch (err) {
+      console.error("Error syncing user:", err);
+    }
   }
 );
+
 
 const deleteUserFromDB = inngest.createFunction(
   { id: "delete-user-from-db" },
